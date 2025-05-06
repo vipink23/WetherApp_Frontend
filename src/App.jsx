@@ -55,9 +55,6 @@ function App() {
       const res = await axios.get(
         `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true&hourly=temperature_2m&timezone=auto`
       );
-
-      console.log(res.data);
-
       const temperature = res?.data?.current_weather?.temperature;
       const weatherCode = res?.data?.current_weather?.weathercode;
 
@@ -133,7 +130,6 @@ function App() {
         "http://localhost:3000/AddWeather",
         addedData
       );
-      console.log("Response:", res.data);
     } catch (error) {
       console.error(error.response?.data || error.message, "err");
     }
@@ -147,7 +143,7 @@ function App() {
       console.log(error, "errr");
     }
   };
-  console.log(recentdata);
+
 
   useEffect(() => {
     fetchRecentData();
@@ -169,112 +165,209 @@ function App() {
   };
 
   // search query
-  const [searchQuery, setSearchQuery] = useState("");
+  // const [searchQuery, setSearchQuery] = useState("");
+  // const handleSearchChange = (e) => {
+  //   setSearchQuery(e.target.value);
+  // };
 
-  // Function to handle the search input change
+  // const filteredData = recentdata.filter((item) => {
+  //   return (
+  //     item.country.toLowerCase().includes(searchQuery.toLowerCase()) ||
+  //     item.date.toLowerCase().includes(searchQuery.toLowerCase())
+  //   );
+  // });
+
+  const [searchQuery, setSearchQuery] = useState("");
+  const [filteredResults, setFilteredResults] = useState([]);
   const handleSearchChange = (e) => {
     setSearchQuery(e.target.value);
   };
 
-  // Filter the data based on search query
-  const filteredData = recentdata.filter((item) => {
-    return (
-      item.country.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.date.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+  useEffect(() => {
+    const filtered = recentdata.filter((item) => {
+      return (
+        item.country.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        item.date.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    });
+
+    setFilteredResults(filtered);
+  }, [searchQuery, recentdata]);
+
+  const [datefilter, setDateFilter] = useState({
+    todate: "",
+    fromdate: "",
   });
+
+  const filterdata = (e) => {
+    const { name, value } = e.target;
+
+    setDateFilter((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
+  };
+
+  const HandleFilter = async () => {
+    try {
+      const res = await axios.get(
+        `http://localhost:3000/GetFilteredWether?fromDate=${datefilter.fromdate}&toDate=${datefilter.todate}`
+      );
+
+
+      setFilteredResults(res.data);
+    } catch (error) {
+      console.log(error, "errr");
+    }
+  };
 
   return (
     <>
-      <div className="flex flex-col md:flex-row w-full min-h-screen items-center justify-center bg-cover bg-center relative">
+      <div className="flex flex-col w-full min-h-screen items-center justify-center bg-cover bg-center relative">
         <div className="absolute inset-0 bg-black opacity-30"></div>
-        <div className="relative z-10 flex flex-col md:flex-row items-start gap-6 p-6 w-full max-w-5xl rounded-3xl">
-          {/* Left Panel: Weather Info */}
-          <div className="bg-orange-100 text-orange-600 p-8 rounded-3xl w-full md:w-1/3 shadow-lg py-14">
-            <div className="text-xl font-semibold mb-4 text-center">
-              Today <span className="text-sm">▼</span>
+
+        <div className="relative z-10 flex flex-col gap-6 p-6 w-full max-w-7xl rounded-3xl">
+          {/* Top Row: Weather Card and Forecast/Random Text */}
+          <div className="flex flex-col md:flex-row w-full gap-6">
+            {/* Weather Info Card */}
+            <div className="bg-orange-100 text-orange-600 p-8 rounded-3xl w-full md:w-1/3 shadow-lg py-14">
+              <div className="text-xl font-semibold mb-4 text-center">
+                Today <span className="text-sm">▼</span>
+              </div>
+              <div className="text-6xl font-bold flex items-center gap-2 mb-2 text-center justify-center">
+                ☀️ <span>{currentWeather.temperature}</span>
+              </div>
+              <div className="text-xl mb-3 text-center">
+                {currentWeather.description}
+              </div>
+              <div className="text-sm text-orange-500 text-center mb-2">
+                <select onChange={handleSelect} value={selectedCity}>
+                  <option value={`lat=28.6448&long=77.2269`}>Delhi</option>
+                  <option value={`lat=55.7558&long=37.6173`}>Moscow</option>
+                  <option value={`lat=48.8566&long=2.3522`}>Paris</option>
+                  <option value={`lat=40.7128&long=-74.0060`}>New York</option>
+                  <option value={`lat=-33.8688&long=151.2093`}>Sydney</option>
+                  <option value={`lat=24.7136&long=46.6753`}>Riyadh</option>
+                </select>
+              </div>
+              <div className="text-base text-orange-500 mb-4 text-center mt-3">
+                {new Date().toLocaleDateString("en-GB")}
+              </div>
+              <div className="text-sm text-orange-500 text-center">
+                Feels like 30 | Sunset 18:20
+              </div>
             </div>
-            <div className="text-6xl font-bold flex items-center gap-2 mb-2 text-center">
-              ☀️ <span>{currentWeather.temperature}</span>
-            </div>
-            <div className="text-xl mb-3 text-center">
-              {currentWeather.description}
-            </div>
-            <div className="text-sm text-orange-500 text-center mb-2">
-              <select onChange={handleSelect} value={selectedCity}>
-                {/* <option value="">Choose City</option> */}
-                <option value={`lat=28.6448&long=77.2269`}>Delhi</option>
-                <option value={`lat=55.7558&long=37.6173`}>Moscow</option>
-                <option value={`lat=48.8566&long=2.3522`}>Paris</option>
-                <option value={`lat=40.7128&long=-74.0060`}>New York</option>
-                <option value={`lat=-33.8688&long=151.2093`}>Sydney</option>
-                <option value={`lat=24.7136&long=46.6753`}>Riyadh</option>
-              </select>
-            </div>
-            <div className="text-base text-orange-500 mb-4 text-center mt-3">
-              {new Date().toLocaleDateString("en-GB")}
-            </div>
-            <div className="text-sm text-orange-500 text-center">
-              Feels like 30 | Sunset 18:20
+
+            {/* Right Column: Forecast and Text */}
+            <div className="flex flex-col w-full md:w-1/2 space-y-4">
+              {/* Forecast Section */}
+              <div className="bg-white/60 backdrop-blur-md p-4 rounded-2xl text-gray-800 shadow">
+                <div className="grid grid-cols-6 gap-4 text-center text-sm">
+                  {hourlyData.map((hour, index) => (
+                    <div key={index}>
+                      <div>{hour.time}</div>
+                      <div>
+                        {hour.icon} {hour.temperature}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Random Text and Search Bar */}
+              <div>
+                <div className="text-gray-800 mb-4 mt-6">
+                  <h2 className="text-2xl font-semibold mb-2">Random Text</h2>
+                  <p className="text-base leading-relaxed">
+                    Improve him believe opinion offered met and end cheered
+                    forbade. Friendly as stronger speedily by recurred. Son
+                    interest wandered sir addition end say. Manners beloved
+                    affixed picture men ask.
+                  </p>
+                </div>
+              </div>
             </div>
           </div>
 
-          <div className="flex flex-col w-full md:w-1/2 space-y-4">
-            {/* Forecast Section */}
-            <div className="bg-white/60 backdrop-blur-md p-4 rounded-2xl text-gray-800 shadow">
-              <div className="grid grid-cols-6 gap-4 text-center text-sm">
-                {hourlyData.map((hour, index) => (
-                  <div key={index}>
-                    <div>{hour.time}</div>
-                    <div>
-                      {hour.icon} {hour.temperature}
-                    </div>
-                  </div>
-                ))}
+          {/* Full-width Table Below */}
+          <div className="bg-white/90 w-full rounded-xl p-4 shadow mt-4">
+            <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center mb-3 gap-4">
+              <h3 className="text-lg font-semibold text-gray-800">
+                Recent table
+              </h3>
+
+              <div className="flex flex-wrap items-end gap-2">
+                <div className="flex flex-col">
+                  <label className="text-sm text-gray-500">Start Date</label>
+                  <input
+                    type="date"
+                    className="border p-2 rounded-md"
+                    name="fromdate"
+                    value={datefilter.fromdate}
+                    onChange={filterdata}
+                  />
+                </div>
+
+                <div className="flex flex-col">
+                  <label className="text-sm text-gray-500">End Date</label>
+                  <input
+                    type="date"
+                    className="border p-2 rounded-md"
+                    name="todate"
+                    value={datefilter.todate}
+                    onChange={filterdata}
+                  />
+                </div>
+
+                <button
+                  className="bg-blue-500 hover:bg-blue-600 text-white font-semibold py-2 px-6 rounded-xl shadow transition duration-200 ease-in-out"
+                  type="submit"
+                  onClick={HandleFilter}
+                >
+                  Filter
+                </button>
               </div>
+
+              <input
+                type="text"
+                placeholder="Search by city or date"
+                className="border p-2 rounded-md w-full lg:w-auto"
+                value={searchQuery}
+                onChange={handleSearchChange}
+              />
             </div>
 
-            {/* Random Text */}
-            <div className="text-white drop-shadow mt-8">
-              <h2 className="text-xl font-semibold mb-2">Random Text</h2>
-              <p className="text-sm leading-relaxed">
-                Improve him believe opinion offered met and end cheered forbade.
-                Friendly as stronger speedily by recurred. Son interest wandered
-                sir addition end say. Manners beloved affixed picture men ask.
-              </p>
-            </div>
-
-            <div className="mt-6 bg-white/70 w-full rounded-xl p-4 shadow">
-              <div className="flex justify-between items-center mb-4">
-                <h3 className="text-lg font-semibold text-gray-800">
-                  Recent table
-                </h3>
-                <input
-                  type="text"
-                  placeholder="Search by city or date"
-                  className="border p-2"
-                  value={searchQuery}
-                  onChange={handleSearchChange}
-                />
-              </div>
-              <table className="w-full table-auto border-collapse">
+            {/* Scrollable Table Container */}
+            <div className="overflow-x-auto">
+              <table className="w-full table-fixed border-collapse mt-4">
                 <thead className="bg-orange-200 text-orange-800">
                   <tr>
-                    <th className="px-4 py-2 text-left">City</th>
-                    <th className="px-4 py-2 text-left">latitude</th>
-                    <th className="px-4 py-2 text-left">Longitude</th>
-                    <th className="px-4 py-2 text-left">Date</th>
+                    <th className="px-4 py-2 text-left w-1/4">City</th>
+                    <th className="px-4 py-2 text-left w-1/4">Latitude</th>
+                    <th className="px-4 py-2 text-left w-1/4">Longitude</th>
+                    <th className="px-4 py-2 text-left w-1/4">Date</th>
                   </tr>
                 </thead>
                 <tbody className="text-gray-700">
-                  {filteredData.map((item, index) => (
-                    <tr key={index} className="border-t border-orange-100">
-                      <td className="px-4 py-2">{item.country}</td>
-                      <td className="px-4 py-2">{item.latitude}</td>
-                      <td className="px-4 py-2">{item.longitude}</td>
-                      <td className="px-4 py-2">{item.date}</td>
+                  {filteredResults.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={4}
+                        className="px-4 py-2 text-center text-gray-500"
+                      >
+                        No data found
+                      </td>
                     </tr>
-                  ))}
+                  ) : (
+                    filteredResults.map((item, index) => (
+                      <tr key={index} className="border-t border-orange-100">
+                        <td className="px-4 py-2 truncate">{item.country}</td>
+                        <td className="px-4 py-2 truncate">{item.latitude}</td>
+                        <td className="px-4 py-2 truncate">{item.longitude}</td>
+                        <td className="px-4 py-2 truncate">{item.date}</td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>

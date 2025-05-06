@@ -12,18 +12,57 @@ function App() {
   const [longitude, setLongitude] = useState(77.2269); // Default longitude for India
   const [selectedCity, setSelectedCity] = useState("lat=28.6139&long=77.2090");
   const [recentdata, setRecentData] = useState([]);
+  // const fetchWeather = async () => {
+  //   try {
+  //     const res = await axios.get(
+  //       `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true&hourly=temperature_2m&timezone=auto`
+  //     );
+
+  //     console.log(res.data);
+
+  //     const temperature = res?.data?.current_weather?.temperature;
+  //     const weatherCode = res?.data?.current_weather?.weathercode;
+
+  //     let weatherDescription = "Unknown"; // Default value
+
+  //     // Mapping weather codes to human-readable descriptions
+  //     if (weatherCode === 0) {
+  //       weatherDescription = "Clear sky";
+  //     } else if (weatherCode === 1 || weatherCode === 2) {
+  //       weatherDescription = "Partly cloudy";
+  //     } else if (weatherCode === 3) {
+  //       weatherDescription = "Cloudy";
+  //     } else if (weatherCode === 45 || weatherCode === 48) {
+  //       weatherDescription = "Fog";
+  //     } else if (weatherCode >= 51 && weatherCode <= 56) {
+  //       weatherDescription = "Light to moderate rain";
+  //     } else if (weatherCode === 61 || weatherCode === 63) {
+  //       weatherDescription = "Heavy rain";
+  //     }
+  //     setCurrentWeather({
+  //       temperature,
+  //       description: weatherDescription,
+  //     });
+  //   } catch (error) {
+  //     console.log(error, "error");
+  //   }
+  // };
+
+  const [hourlyData, setHourlyData] = useState([]);
+
   const fetchWeather = async () => {
     try {
       const res = await axios.get(
         `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}&current_weather=true&hourly=temperature_2m&timezone=auto`
       );
 
+      console.log(res.data);
+
       const temperature = res?.data?.current_weather?.temperature;
       const weatherCode = res?.data?.current_weather?.weathercode;
 
-      let weatherDescription = "Unknown"; // Default value
+      let weatherDescription = "Unknown";
 
-      // Mapping weather codes to human-readable descriptions
       if (weatherCode === 0) {
         weatherDescription = "Clear sky";
       } else if (weatherCode === 1 || weatherCode === 2) {
@@ -37,10 +76,38 @@ function App() {
       } else if (weatherCode === 61 || weatherCode === 63) {
         weatherDescription = "Heavy rain";
       }
+
       setCurrentWeather({
         temperature,
         description: weatherDescription,
       });
+
+      // Extract hourly data (first 6 hours only, or more if you want)
+      const times = res.data.hourly.time;
+      const temperatures = res.data.hourly.temperature_2m;
+
+      const currentHourIndex = times.findIndex(
+        (time) => new Date(time).getHours() === new Date().getHours()
+      );
+
+      const hourlyForecast = Array(6)
+        .fill(null)
+        .map((_, i) => {
+          const index = currentHourIndex + i;
+          return {
+            time:
+              i === 0
+                ? "Now"
+                : new Date(times[index]).toLocaleTimeString([], {
+                    hour: "numeric",
+                    hour12: true,
+                  }),
+            temperature: `${Math.round(temperatures[index])}°`,
+            icon: "☁️", // You can customize this based on weatherCode if needed
+          };
+        });
+
+      setHourlyData(hourlyForecast);
     } catch (error) {
       console.log(error, "error");
     }
@@ -75,7 +142,7 @@ function App() {
   const fetchRecentData = async () => {
     try {
       const response = await axios.get("http://localhost:3000/AllWeather");
-      setRecentData(response.data);
+      setRecentData(response?.data);
     } catch (error) {
       console.log(error, "errr");
     }
@@ -121,7 +188,6 @@ function App() {
     <>
       <div className="flex flex-col md:flex-row w-full min-h-screen items-center justify-center bg-cover bg-center relative">
         <div className="absolute inset-0 bg-black opacity-30"></div>
-
         <div className="relative z-10 flex flex-col md:flex-row items-start gap-6 p-6 w-full max-w-5xl rounded-3xl">
           {/* Left Panel: Weather Info */}
           <div className="bg-orange-100 text-orange-600 p-8 rounded-3xl w-full md:w-1/3 shadow-lg py-14">
@@ -157,57 +223,14 @@ function App() {
             {/* Forecast Section */}
             <div className="bg-white/60 backdrop-blur-md p-4 rounded-2xl text-gray-800 shadow">
               <div className="grid grid-cols-6 gap-4 text-center text-sm">
-                <div>
-                  <div>Now</div>
-                  <div>☁️ 25°</div>
-                </div>
-                <div>
-                  <div>2 AM</div>
-                  <div>☁️ 25°</div>
-                </div>
-                <div>
-                  <div>3 AM</div>
-                  <div>☁️ 23°</div>
-                </div>
-                <div>
-                  <div>4 AM</div>
-                  <div>☁️ 22°</div>
-                </div>
-                <div>
-                  <div>5 AM</div>
-                  <div>☁️ 20°</div>
-                </div>
-                <div>
-                  <div>6 AM</div>
-                  <div>☁️ 25°</div>
-                </div>
-              </div>
-              <hr className="mt-5" />
-              <div className="grid grid-cols-6 gap-4 text-center text-sm p-4">
-                <div>
-                  <div>Now</div>
-                  <div>☁️ 25°</div>
-                </div>
-                <div>
-                  <div>2 AM</div>
-                  <div>☁️ 25°</div>
-                </div>
-                <div>
-                  <div>3 AM</div>
-                  <div>☁️ 23°</div>
-                </div>
-                <div>
-                  <div>4 AM</div>
-                  <div>☁️ 22°</div>
-                </div>
-                <div>
-                  <div>5 AM</div>
-                  <div>☁️ 20°</div>
-                </div>
-                <div>
-                  <div>6 AM</div>
-                  <div>☁️ 25°</div>
-                </div>
+                {hourlyData.map((hour, index) => (
+                  <div key={index}>
+                    <div>{hour.time}</div>
+                    <div>
+                      {hour.icon} {hour.temperature}
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
 
